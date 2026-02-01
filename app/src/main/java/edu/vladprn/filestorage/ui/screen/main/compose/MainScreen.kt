@@ -19,9 +19,12 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,7 +46,8 @@ fun MainScreen(
 
     Content(
         state = state,
-        listener = viewModel
+        listener = viewModel,
+        snackbarHostState = viewModel.snackbarHostState
     )
 
     BackHandler(state.isBackHandlerEnabled) {
@@ -57,7 +61,8 @@ fun MainScreen(
 @Composable
 private fun Content(
     state: MainViewState,
-    listener: MainListener
+    listener: MainListener,
+    snackbarHostState: SnackbarHostState
 ) {
     Scaffold(
         floatingActionButton = {
@@ -70,7 +75,8 @@ private fun Content(
                     contentDescription = null
                 )
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -177,14 +183,14 @@ private fun UnloadFile(viewModel: MainViewModel) {
     }
 }
 
-
 @Preview
 @Composable
 private fun Preview() {
     FileStorageTheme {
         Content(
             state = MainViewState(),
-            listener = MainListener.Companion.empty
+            listener = MainListener.Companion.empty,
+            snackbarHostState = remember { SnackbarHostState() }
         )
     }
 }

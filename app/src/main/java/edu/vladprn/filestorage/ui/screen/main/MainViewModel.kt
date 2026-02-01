@@ -3,11 +3,14 @@ package edu.vladprn.filestorage.ui.screen.main
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import edu.vladprn.filestorage.R
+import edu.vladprn.filestorage.data.ResourceManager
 import edu.vladprn.filestorage.domain.interactor.StorageInteractor
 import edu.vladprn.filestorage.domain.model.FileModel
 import edu.vladprn.filestorage.ui.screen.main.compose.FileItemAction
@@ -19,11 +22,13 @@ import java.util.Locale
 
 class MainViewModel(
     private val storageInteractor: StorageInteractor,
+    private val resourceManager: ResourceManager,
     private val fileUtils: FileUtils,
     private val intentUtils: IntentUtils,
 ) : ViewModel(), MainListener {
 
     var state by mutableStateOf(MainViewState())
+    var snackbarHostState = SnackbarHostState()
 
     private var files: List<FileModel>? = null
     private var galleryFileModel: FileModel? = null
@@ -53,7 +58,11 @@ class MainViewModel(
         val saveFileResult = storageInteractor.saveFile(uri)
         state = state.copy(inProgress = false)
 
-        if (saveFileResult) loadFiles()
+        if (saveFileResult) {
+            loadFiles()
+        } else {
+            showError()
+        }
     }
 
     fun saveFileUri(uri: Uri?) = viewModelScope.launch {
@@ -66,6 +75,8 @@ class MainViewModel(
 
         if (fileIO != null) {
             fileUtils.saveFile(fileIO, uri)
+        } else {
+            showError()
         }
     }
 
@@ -149,6 +160,8 @@ class MainViewModel(
                     mimeType = fileModel.mimeType
                 )
             }
+        } else {
+            showError()
         }
     }
 
@@ -162,6 +175,8 @@ class MainViewModel(
                 file = fileIO,
                 mimeType = fileModel.mimeType
             )
+        } else {
+            showError()
         }
     }
 
@@ -208,6 +223,11 @@ class MainViewModel(
             ),
             inProgress = false
         )
+    }
+
+    private suspend fun showError() {
+        val message = resourceManager.getString(R.string.error)
+        snackbarHostState.showSnackbar(message)
     }
 
     private fun buildItems(

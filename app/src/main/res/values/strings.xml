@@ -7,4 +7,6 @@
     <string name="file_item_open_external">Открыть во внешнем приложении</string>
     <string name="file_item_unload">Выгрузить</string>
     <string name="file_item_delete">Удалить</string>
+
+    <string name="error">Ошибка!</string>
 </resources>

@@ -1,6 +1,7 @@
 package edu.vladprn.filestorage.di
 
 import edu.vladprn.filestorage.data.FileSystemModel
+import edu.vladprn.filestorage.data.ResourceManager
 import edu.vladprn.filestorage.data.database.AppDatabase
 import edu.vladprn.filestorage.data.mapper.AddressEntityMapper
 import edu.vladprn.filestorage.data.mapper.FileEntityMapper
@@ -26,6 +27,7 @@ val MainModule = module {
     factoryOf(::StorageInteractor)
     factoryOf(::FileUtils)
     factoryOf(::FileSystemModel)
+    factoryOf(::ResourceManager)
     factoryOf(::IntentUtils)
 
     viewModelOf(::MainViewModel)
