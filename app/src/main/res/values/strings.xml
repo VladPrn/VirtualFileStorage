@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">FileStorage</string>
+
+    <string name="query_label">Все файлы</string>
+
+    <string name="file_item_open">Открыть</string>
+    <string name="file_item_open_external">Открыть во внешнем приложении</string>
+    <string name="file_item_unload">Выгрузить</string>
+    <string name="file_item_delete">Удалить</string>
+</resources>
