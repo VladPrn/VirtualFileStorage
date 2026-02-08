@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -78,39 +80,56 @@ private fun Content(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            SearchBar(
-                state = state,
-                listener = listener
-            )
-
-            FileList(
-                state = state,
-                listener = listener
-            )
-        }
-    }
-
-    if (state.inProgress) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
+            modifier = Modifier.fillMaxSize()
         ) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }
-    }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                SearchBar(
+                    state = state,
+                    listener = listener
+                )
 
-    state.galleryBitmap?.let { bitmap ->
-        BitmapSwipeWidget(
-            bitmap = bitmap,
-            onLeftSwipe = { listener.onGalleryLeftSwipe() },
-            onRightSwipe = { listener.onGalleryRightSwipe() },
-        )
+                FileList(
+                    state = state,
+                    listener = listener
+                )
+            }
+
+            if (state.inProgress) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White)
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+            }
+
+            if (state.addFileDialog.isVisible) {
+                FileNameDialog(
+                    modifier = Modifier
+                        .imePadding()
+                        .align(Alignment.Center)
+                        .padding(horizontal = 32.dp)
+                        .width(500.dp),
+                    defaultFileName = state.addFileDialog.defaultFileName,
+                    onConfirm = { listener.onAddFileConfirm(it) },
+                    onCancel = { listener.onAddFileCancel() }
+                )
+            }
+
+            state.galleryBitmap?.let { bitmap ->
+                BitmapSwipeWidget(
+                    bitmap = bitmap,
+                    onLeftSwipe = { listener.onGalleryLeftSwipe() },
+                    onRightSwipe = { listener.onGalleryRightSwipe() },
+                )
+            }
+        }
     }
 }
 
@@ -189,7 +208,7 @@ private fun Preview() {
     FileStorageTheme {
         Content(
             state = MainViewState(),
-            listener = MainListener.Companion.empty,
+            listener = MainListener.empty,
             snackbarHostState = remember { SnackbarHostState() }
         )
     }

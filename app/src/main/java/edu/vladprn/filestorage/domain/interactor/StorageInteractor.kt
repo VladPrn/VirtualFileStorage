@@ -16,12 +16,15 @@ class StorageInteractor(
 
     private var isFirstSaving = true
 
-    suspend fun saveFile(uri: Uri): Boolean {
+    suspend fun saveFile(
+        uri: Uri,
+        fileName: String? = null
+    ): Boolean {
         val fileInfo = fileUtils.getFileInfo(uri)
         if (fileInfo.size == 0L) return false
 
         var fileModel = FileModel(
-            name = fileInfo.name.orEmpty(),
+            name = fileName ?: fileInfo.name.orEmpty(),
             mimeType = fileInfo.mimeType.orEmpty(),
             size = fileInfo.size
         )

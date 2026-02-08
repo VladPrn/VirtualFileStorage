@@ -8,5 +8,10 @@
     <string name="file_item_unload">Выгрузить</string>
     <string name="file_item_delete">Удалить</string>
 
+    <string name="fileNameTitle">Добавить файл</string>
+    <string name="fileNameLabel">Имя файла</string>
+    <string name="fileNameCancelButton">Отмена</string>
+    <string name="fileNameConfirmButton">ОК</string>
+
     <string name="error">Ошибка!</string>
 </resources>

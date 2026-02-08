@@ -37,6 +37,8 @@ class MainViewModel(
     private var onFilePick: (() -> Unit) = {}
     private var onFileUnload: ((String) -> Unit) = {}
 
+    private var fileUri: Uri? = null
+
     init {
         viewModelScope.launch {
             loadFiles()
@@ -52,17 +54,18 @@ class MainViewModel(
     }
 
     fun openFileUri(uri: Uri?) = viewModelScope.launch {
-        uri ?: return@launch
+        fileUri = uri ?: return@launch
 
-        state = state.copy(inProgress = true)
-        val saveFileResult = storageInteractor.saveFile(uri)
-        state = state.copy(inProgress = false)
+        val fileInfo = fileUtils.getFileInfo(uri)
+        val fileName = fileInfo.name
 
-        if (saveFileResult) {
-            loadFiles()
-        } else {
-            showError()
-        }
+        state = state.copy(
+            addFileDialog = MainViewState.AddFileDialog(
+                isVisible = true,
+                defaultFileName = fileName.orEmpty()
+            ),
+            isBackHandlerEnabled = true
+        )
     }
 
     fun saveFileUri(uri: Uri?) = viewModelScope.launch {
@@ -92,6 +95,34 @@ class MainViewModel(
 
     override fun onAddFileClick() {
         onFilePick()
+    }
+
+    override fun onAddFileConfirm(fileName: String) {
+        val uri = fileUri ?: return
+
+        viewModelScope.launch {
+            state = state.copy(
+                addFileDialog = MainViewState.AddFileDialog(),
+                inProgress = true
+            )
+            val saveFileResult = storageInteractor.saveFile(
+                uri = uri,
+                fileName = fileName
+            )
+            state = state.copy(inProgress = false)
+
+            if (saveFileResult) {
+                loadFiles()
+            } else {
+                showError()
+            }
+        }
+    }
+
+    override fun onAddFileCancel() {
+        state = state.copy(
+            addFileDialog = MainViewState.AddFileDialog()
+        )
     }
 
     override fun onGalleryLeftSwipe() {
@@ -126,6 +157,7 @@ class MainViewModel(
                     openFileInExternal(file.fileModel)
                 }
             }
+
             FileItemAction.OPEN -> openFileInGallery(file.fileModel)
             FileItemAction.OPEN_EXTERNAL -> openFileInExternal(file.fileModel)
             FileItemAction.UNLOAD -> unloadFile(file.fileModel)
@@ -137,6 +169,7 @@ class MainViewModel(
         galleryFileModel = null
         state = state.copy(
             galleryBitmap = null,
+            addFileDialog = MainViewState.AddFileDialog(),
             isBackHandlerEnabled = false
         )
     }
@@ -290,6 +323,13 @@ data class MainViewState(
     val searchQuery: String = "",
     val items: List<FileUIModel> = emptyList(),
     val galleryBitmap: Bitmap? = null,
+    val addFileDialog: AddFileDialog = AddFileDialog(),
     val inProgress: Boolean = false,
     val isBackHandlerEnabled: Boolean = false,
-)
+) {
+
+    data class AddFileDialog(
+        val isVisible: Boolean = false,
+        val defaultFileName: String = "",
+    )
+}
