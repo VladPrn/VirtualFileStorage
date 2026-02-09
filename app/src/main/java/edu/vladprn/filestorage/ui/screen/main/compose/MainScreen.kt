@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -121,15 +122,16 @@ private fun Content(
                     onCancel = { listener.onAddFileCancel() }
                 )
             }
-
-            state.galleryBitmap?.let { bitmap ->
-                BitmapSwipeWidget(
-                    bitmap = bitmap,
-                    onLeftSwipe = { listener.onGalleryLeftSwipe() },
-                    onRightSwipe = { listener.onGalleryRightSwipe() },
-                )
-            }
         }
+    }
+
+    state.galleryBitmap?.let { bitmap ->
+        BitmapSwipeWidget(
+            modifier = Modifier.navigationBarsPadding(),
+            bitmap = bitmap,
+            onLeftSwipe = { listener.onGalleryLeftSwipe() },
+            onRightSwipe = { listener.onGalleryRightSwipe() },
+        )
     }
 }
 

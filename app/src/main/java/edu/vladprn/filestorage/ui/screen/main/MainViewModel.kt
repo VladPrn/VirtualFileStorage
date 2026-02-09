@@ -273,7 +273,7 @@ class MainViewModel(
 
         return files.orEmpty()
             .filter { file ->
-                val contains = queryTokens.any { file.name.contains(it) }
+                val contains = queryTokens.all { file.name.contains(it) }
                 val isEmpty = queryTokens.isEmpty()
                 contains || isEmpty
             }

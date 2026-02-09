@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat
 
 @Composable
 fun BitmapSwipeWidget(
+    modifier: Modifier,
     bitmap: Bitmap,
     onLeftSwipe: () -> Unit,
     onRightSwipe: () -> Unit,
@@ -29,23 +31,23 @@ fun BitmapSwipeWidget(
     val swipeThreshold = with(LocalDensity.current) { 100.dp.toPx() }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .pointerInput(Unit) {
-                val drawOffset = mutableStateOf(0f)
+                val drawOffset = mutableFloatStateOf(0f)
 
                 detectHorizontalDragGestures(
-                    onDragStart = { drawOffset.value = 0f },
+                    onDragStart = { drawOffset.floatValue = 0f },
                     onHorizontalDrag = { change, dragAmount ->
-                        drawOffset.value += dragAmount
+                        drawOffset.floatValue += dragAmount
                         change.consume()
                     },
                     onDragEnd = {
                         when {
-                            drawOffset.value > swipeThreshold -> onRightSwipe()
-                            drawOffset.value < -swipeThreshold -> onLeftSwipe()
+                            drawOffset.floatValue > swipeThreshold -> onRightSwipe()
+                            drawOffset.floatValue < -swipeThreshold -> onLeftSwipe()
                         }
-                        drawOffset.value = 0f
+                        drawOffset.floatValue = 0f
                     }
                 )
             }
@@ -64,10 +66,10 @@ fun BitmapSwipeWidget(
     val wic = window?.let { WindowCompat.getInsetsController(window, window.decorView) }
 
     DisposableEffect(Unit) {
-        wic?.hide(WindowInsetsCompat.Type.systemBars())
+        wic?.hide(WindowInsetsCompat.Type.statusBars())
 
         onDispose {
-            wic?.show(WindowInsetsCompat.Type.systemBars())
+            wic?.show(WindowInsetsCompat.Type.statusBars())
         }
     }
 }
