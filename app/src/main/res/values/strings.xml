@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">FileStorage</string>
 
+    <string name="main_title">Хранилище</string>
     <string name="query_label">Все файлы</string>
 
     <string name="file_item_open">Открыть</string>
@@ -14,4 +15,7 @@
     <string name="fileNameConfirmButton">ОК</string>
 
     <string name="error">Ошибка!</string>
+
+    <string name="settings_title">Настройки</string>
+    <string name="compress_images_setting">Сжимать картинки</string>
 </resources>

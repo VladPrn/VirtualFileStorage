@@ -1,17 +1,22 @@
 package edu.vladprn.filestorage.domain.interactor
 
+import android.content.Context
 import android.net.Uri
 import edu.vladprn.filestorage.data.FileSystemModel
+import edu.vladprn.filestorage.data.mapper.ImageCompressor
 import edu.vladprn.filestorage.data.repository.FileRepository
 import edu.vladprn.filestorage.domain.model.FileModel
 import edu.vladprn.filestorage.utils.FileUtils
 import java.io.File
+import java.io.InputStream
 
 class StorageInteractor(
+    private val context: Context,
     private val fileRepository: FileRepository,
     private val storageAllocator: StorageAllocator,
     private val fileUtils: FileUtils,
     private val fileSystemModel: FileSystemModel,
+    private val imageCompressor: ImageCompressor,
 ) {
 
     private var isFirstSaving = true
@@ -38,7 +43,8 @@ class StorageInteractor(
         val addresses = storageAllocator.allocateAddresses(fileModel)
         fileModel = fileModel.copy(addresses = addresses)
 
-        if (!fileSystemModel.writeFile(uri, fileModel)) return false
+        val inputStream = getInputStream(uri) ?: return false
+        if (!fileSystemModel.writeFile(inputStream, fileModel)) return false
 
         storageAllocator.fillAllocatedAddresses(addresses)
         fileRepository.insertFile(fileModel)
@@ -53,4 +59,12 @@ class StorageInteractor(
     suspend fun deleteFile(fileModel: FileModel) = fileRepository.deleteFile(fileModel)
 
     suspend fun getAllFiles() = fileRepository.getAllFiles()
+
+    suspend fun beforeSaveFile(uri: Uri) = imageCompressor.processImage(uri)
+
+    private fun getInputStream(uri: Uri): InputStream? = try {
+        context.contentResolver.openInputStream(uri)
+    } catch (_: Throwable) {
+        null
+    }
 }

@@ -11,6 +11,7 @@ interface MainListener {
     fun onGalleryRightSwipe()
     fun onItemAction(file: FileUIModel, fileItemAction: FileItemAction)
     fun onNavigateBack()
+    fun onSettingsClick()
 
     companion object {
         val empty = object : MainListener {
@@ -21,6 +22,7 @@ interface MainListener {
             override fun onGalleryLeftSwipe() = Unit
             override fun onGalleryRightSwipe() = Unit
             override fun onNavigateBack() = Unit
+            override fun onSettingsClick() = Unit
 
             override fun onItemAction(
                 file: FileUIModel,

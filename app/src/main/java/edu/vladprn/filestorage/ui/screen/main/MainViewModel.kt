@@ -11,11 +11,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import edu.vladprn.filestorage.R
 import edu.vladprn.filestorage.data.ResourceManager
+import edu.vladprn.filestorage.domain.MimeType
 import edu.vladprn.filestorage.domain.interactor.StorageInteractor
 import edu.vladprn.filestorage.domain.model.FileModel
+import edu.vladprn.filestorage.ui.AppNavigator
+import edu.vladprn.filestorage.ui.screen.AppScreen
 import edu.vladprn.filestorage.ui.screen.main.compose.FileItemAction
 import edu.vladprn.filestorage.utils.FileUtils
-import edu.vladprn.filestorage.utils.IntentUtils
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
@@ -24,7 +26,7 @@ class MainViewModel(
     private val storageInteractor: StorageInteractor,
     private val resourceManager: ResourceManager,
     private val fileUtils: FileUtils,
-    private val intentUtils: IntentUtils,
+    private val appNavigator: AppNavigator,
 ) : ViewModel(), MainListener {
 
     var state by mutableStateOf(MainViewState())
@@ -54,9 +56,11 @@ class MainViewModel(
     }
 
     fun openFileUri(uri: Uri?) = viewModelScope.launch {
-        fileUri = uri ?: return@launch
+        uri ?: return@launch
+        val newUri = storageInteractor.beforeSaveFile(uri)
+        fileUri = newUri
 
-        val fileInfo = fileUtils.getFileInfo(uri)
+        val fileInfo = fileUtils.getFileInfo(newUri)
         val fileName = fileInfo.name
 
         state = state.copy(
@@ -174,6 +178,12 @@ class MainViewModel(
         )
     }
 
+    override fun onSettingsClick() {
+        appNavigator.navController { navController ->
+            navController.navigate(AppScreen.SETTINGS)
+        }
+    }
+
     private fun openFileInGallery(fileModel: FileModel) = viewModelScope.launch {
         state = state.copy(inProgress = true)
         val fileIO = storageInteractor.loadFile(fileModel)
@@ -188,7 +198,7 @@ class MainViewModel(
                     isBackHandlerEnabled = true
                 )
             } else {
-                intentUtils.openFile(
+                fileUtils.openFile(
                     file = fileIO,
                     mimeType = fileModel.mimeType
                 )
@@ -204,7 +214,7 @@ class MainViewModel(
         state = state.copy(inProgress = false)
 
         if (fileIO != null) {
-            intentUtils.openFile(
+            fileUtils.openFile(
                 file = fileIO,
                 mimeType = fileModel.mimeType
             )
@@ -293,7 +303,7 @@ class MainViewModel(
             FileUIModel(
                 name = fileModel.name,
                 size = formatFileSizeExact(fileModel.size),
-                isImage = fileModel.mimeType == JPEG || fileModel.mimeType == PNG,
+                isImage = MimeType.isImage(fileModel.mimeType),
                 fileModel = fileModel
             )
         }
@@ -311,11 +321,6 @@ class MainViewModel(
                 String.format(Locale.US, "%.1f МБ", mb)
             }
         }
-    }
-
-    companion object {
-        private const val JPEG = "image/jpeg"
-        private const val PNG = "image/png"
     }
 }
 

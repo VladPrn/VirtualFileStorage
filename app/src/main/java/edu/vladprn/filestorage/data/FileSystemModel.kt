@@ -18,17 +18,12 @@ class FileSystemModel(
 ) {
 
     suspend fun writeFile(
-        uri: Uri,
+        inputStream: InputStream,
         fileModel: FileModel,
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val inputStream = context.contentResolver.openInputStream(uri)
-            if (inputStream != null) {
-                inputStream.use { writeFile(inputStream, fileModel) }
-                true
-            } else {
-                false
-            }
+            inputStream.use { writeFileInternal(inputStream, fileModel) }
+            true
         } catch (_: Throwable) {
             false
         }
@@ -40,7 +35,7 @@ class FileSystemModel(
             val file = File(folder, TMP_FILE)
             folder.mkdir()
             file.outputStream().use { outputStream ->
-                extractFile(outputStream, fileModel)
+                extractFileInternal(outputStream, fileModel)
             }
 
             file
@@ -49,7 +44,7 @@ class FileSystemModel(
         }
     }
 
-    private fun writeFile(
+    private fun writeFileInternal(
         inputStream: InputStream,
         fileModel: FileModel,
     ) {
@@ -86,7 +81,7 @@ class FileSystemModel(
         }
     }
 
-    private fun extractFile(
+    private fun extractFileInternal(
         outputStream: OutputStream,
         fileModel: FileModel,
     ) {
