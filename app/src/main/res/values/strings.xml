@@ -18,4 +18,10 @@
 
     <string name="settings_title">Настройки</string>
     <string name="compress_images_setting">Сжимать картинки</string>
+    <string name="save_backup_setting">Сохранить бекап</string>
+    <string name="backup_success">Бекап успешно сохранен</string>
+    <string name="backup_failed">Ошибка при создании бекапа</string>
+
+    <string name="backup_progress_title">Создание бекапа</string>
+    <string name="backup_progress_desc">%d из %d файлов</string>
 </resources>

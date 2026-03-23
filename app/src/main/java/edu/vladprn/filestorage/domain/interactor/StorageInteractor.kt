@@ -9,6 +9,7 @@ import edu.vladprn.filestorage.domain.model.FileModel
 import edu.vladprn.filestorage.utils.FileUtils
 import java.io.File
 import java.io.InputStream
+import java.io.OutputStream
 
 class StorageInteractor(
     private val context: Context,
@@ -62,8 +63,25 @@ class StorageInteractor(
 
     suspend fun beforeSaveFile(uri: Uri) = imageCompressor.processImage(uri)
 
+    suspend fun extractToZip(
+        uri: Uri,
+        onProgress: ((processedFiles: Int, totalFiles: Int) -> Unit)? = null,
+    ): Boolean {
+        return fileSystemModel.extractToZip(
+            fileModels = fileRepository.getAllFilesWithAddresses(),
+            outputStream = getOutputStream(uri) ?: return false,
+            onProgress = onProgress
+        )
+    }
+
     private fun getInputStream(uri: Uri): InputStream? = try {
         context.contentResolver.openInputStream(uri)
+    } catch (_: Throwable) {
+        null
+    }
+
+    private fun getOutputStream(uri: Uri): OutputStream? = try {
+        context.contentResolver.openOutputStream(uri)
     } catch (_: Throwable) {
         null
     }

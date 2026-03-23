@@ -1,7 +1,6 @@
 package edu.vladprn.filestorage.data
 
 import android.content.Context
-import android.net.Uri
 import edu.vladprn.filestorage.domain.Constants
 import edu.vladprn.filestorage.domain.model.FileModel
 import kotlinx.coroutines.Dispatchers
@@ -11,6 +10,8 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.RandomAccessFile
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.math.min
 
 class FileSystemModel(
@@ -134,6 +135,34 @@ class FileSystemModel(
             if (isWriteMode) {
                 setLength(STORAGE_SIZE.toLong())
             }
+        }
+    }
+
+    suspend fun extractToZip(
+        fileModels: List<FileModel>,
+        outputStream: OutputStream,
+        onProgress: ((processedFiles: Int, totalFiles: Int) -> Unit)? = null
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val zipOutputStream = ZipOutputStream(outputStream)
+            val totalFiles = fileModels.size
+
+            fileModels.forEachIndexed { index, fileModel ->
+                val entryName = fileModel.name
+                zipOutputStream.putNextEntry(ZipEntry(entryName))
+
+                extractFileInternal(zipOutputStream, fileModel)
+
+                zipOutputStream.closeEntry()
+
+                onProgress?.invoke(index + 1, totalFiles)
+            }
+
+            zipOutputStream.finish()
+            zipOutputStream.close()
+            true
+        } catch (_: Throwable) {
+            false
         }
     }
 

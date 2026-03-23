@@ -23,6 +23,12 @@ class FileRepository(
             fileEntityMapper.mapFromEntities(list)
         }
 
+    suspend fun getAllFilesWithAddresses(): List<FileModel> =
+        withContext(Dispatchers.IO) {
+            val list = fileDao.getAllFilesWithAddresses()
+            fileEntityMapper.mapFromAddressesEntities(list)
+        }
+
     suspend fun insertFile(fileModel: FileModel): Long =
         withContext(Dispatchers.IO) {
             appDatabase.withTransaction {

@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import edu.vladprn.filestorage.data.database.entity.AddressEntity
-import edu.vladprn.filestorage.data.database.entity.FileEntity
 
 @Dao
 interface AddressDao {

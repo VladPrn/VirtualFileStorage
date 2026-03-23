@@ -30,7 +30,9 @@ class MainViewModel(
 ) : ViewModel(), MainListener {
 
     var state by mutableStateOf(MainViewState())
+        private set
     var snackbarHostState = SnackbarHostState()
+        private set
 
     private var files: List<FileModel>? = null
     private var galleryFileModel: FileModel? = null

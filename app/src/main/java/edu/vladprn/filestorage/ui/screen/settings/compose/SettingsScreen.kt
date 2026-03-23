@@ -1,19 +1,27 @@
 package edu.vladprn.filestorage.ui.screen.settings.compose
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -23,6 +31,7 @@ import edu.vladprn.filestorage.R
 import edu.vladprn.filestorage.ui.screen.settings.SettingsListener
 import edu.vladprn.filestorage.ui.screen.settings.SettingsViewModel
 import edu.vladprn.filestorage.ui.screen.settings.SettingsViewState
+import edu.vladprn.filestorage.ui.theme.FileStorageTheme
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -33,15 +42,19 @@ fun SettingsScreen(
 
     Content(
         state = state,
-        listener = viewModel
+        listener = viewModel,
+        snackbarHostState = viewModel.snackbarHostState
     )
+
+    UnloadFile(viewModel)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Content(
     state: SettingsViewState,
-    listener: SettingsListener
+    listener: SettingsListener,
+    snackbarHostState: SnackbarHostState
 ) {
     Scaffold(
         topBar = {
@@ -50,40 +63,81 @@ private fun Content(
                     Text(text = stringResource(R.string.settings_title))
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { listener.toggleImageCompression() },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp)
             ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { listener.toggleImageCompression() },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        modifier = Modifier.padding(16.dp),
+                        text = stringResource(R.string.compress_images_setting),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Checkbox(
+                        checked = state.isCompressImages,
+                        onCheckedChange = { listener.toggleImageCompression() }
+                    )
+                }
+
                 Text(
-                    text = stringResource(R.string.compress_images_setting),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { listener.onSaveBackupClick() }
+                        .padding(16.dp),
+                    text = stringResource(R.string.save_backup_setting),
                     style = MaterialTheme.typography.bodyLarge
                 )
-                Checkbox(
-                    checked = state.isCompressImages,
-                    onCheckedChange = { listener.toggleImageCompression() }
+            }
+
+            if (state.backupProgressDialog.isVisible) {
+                BackupProgressDialog(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 32.dp)
+                        .width(500.dp),
+                    processedFiles = state.backupProgressDialog.backupProcessedFiles,
+                    totalFiles = state.backupProgressDialog.backupTotalFiles
                 )
             }
         }
     }
 }
 
+@Composable
+private fun UnloadFile(viewModel: SettingsViewModel) {
+    val backupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip"),
+        onResult = { uri: Uri? ->
+            viewModel.saveBackup(uri)
+        }
+    )
+
+    viewModel.setOnFileUnload { input ->
+        backupLauncher.launch(input)
+    }
+}
+
 @Preview
 @Composable
 private fun Preview() {
-    Content(
-        state = SettingsViewState(),
-        listener = SettingsListener.empty
-    )
+    FileStorageTheme {
+        Content(
+            state = SettingsViewState(),
+            listener = SettingsListener.empty,
+            snackbarHostState = remember { SnackbarHostState() }
+        )
+    }
 }
