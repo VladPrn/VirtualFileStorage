@@ -5,15 +5,15 @@ import androidx.compose.ui.Modifier
 import edu.vladprn.filestorage.R
 
 @Composable
-fun BackupProgressDialog(
+fun ImportProgressDialog(
     modifier: Modifier,
     processedFiles: Int,
     totalFiles: Int,
 ) {
     ProgressDialog(
         modifier = modifier,
-        titleResId = R.string.backup_progress_title,
-        descResId = R.string.backup_progress_desc,
+        titleResId = R.string.import_progress_title,
+        descResId = R.string.import_progress_desc,
         processedFiles = processedFiles,
         totalFiles = totalFiles
     )

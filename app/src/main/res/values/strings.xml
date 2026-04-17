@@ -19,9 +19,15 @@
     <string name="settings_title">Настройки</string>
     <string name="compress_images_setting">Сжимать картинки</string>
     <string name="save_backup_setting">Сохранить бекап</string>
+    <string name="import_backup_setting">Импортировать бекап</string>
     <string name="backup_success">Бекап успешно сохранен</string>
     <string name="backup_failed">Ошибка при создании бекапа</string>
+    <string name="import_success">Бекап успешно импортирован</string>
+    <string name="import_failed">Ошибка при импорте бекапа</string>
 
     <string name="backup_progress_title">Создание бекапа</string>
     <string name="backup_progress_desc">%d из %d файлов</string>
+
+    <string name="import_progress_title">Импорт бекапа</string>
+    <string name="import_progress_desc">%d из %d файлов</string>
 </resources>

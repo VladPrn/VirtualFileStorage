@@ -30,6 +30,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -100,46 +101,52 @@ private fun Content(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier.fillMaxSize()
+        PullToRefreshBox(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            isRefreshing = state.isRefresh,
+            onRefresh = { listener.onRefresh() }
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
+            Box(
+                modifier = Modifier.fillMaxSize()
             ) {
-                SearchBar(
-                    state = state,
-                    listener = listener
-                )
-
-                FileList(
-                    state = state,
-                    listener = listener
-                )
-            }
-
-            if (state.inProgress) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.White)
+                Column(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-            }
+                    SearchBar(
+                        state = state,
+                        listener = listener
+                    )
 
-            if (state.addFileDialog.isVisible) {
-                FileNameDialog(
-                    modifier = Modifier
-                        .imePadding()
-                        .align(Alignment.Center)
-                        .padding(horizontal = 32.dp)
-                        .width(500.dp),
-                    defaultFileName = state.addFileDialog.defaultFileName,
-                    onConfirm = { listener.onAddFileConfirm(it) },
-                    onCancel = { listener.onAddFileCancel() }
-                )
+                    FileList(
+                        state = state,
+                        listener = listener
+                    )
+                }
+
+                if (state.inProgress) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.White)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+
+                if (state.addFileDialog.isVisible) {
+                    FileNameDialog(
+                        modifier = Modifier
+                            .imePadding()
+                            .align(Alignment.Center)
+                            .padding(horizontal = 32.dp)
+                            .width(500.dp),
+                        defaultFileName = state.addFileDialog.defaultFileName,
+                        onConfirm = { listener.onAddFileConfirm(it) },
+                        onCancel = { listener.onAddFileCancel() }
+                    )
+                }
             }
         }
     }

@@ -18,6 +18,7 @@ import edu.vladprn.filestorage.ui.AppNavigator
 import edu.vladprn.filestorage.ui.screen.AppScreen
 import edu.vladprn.filestorage.ui.screen.main.compose.FileItemAction
 import edu.vladprn.filestorage.utils.FileUtils
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
@@ -86,6 +87,15 @@ class MainViewModel(
             fileUtils.saveFile(fileIO, uri)
         } else {
             showError()
+        }
+    }
+
+    override fun onRefresh() {
+        viewModelScope.launch {
+            state = state.copy(isRefresh = true)
+            loadFiles()
+            delay(200)
+            state = state.copy(isRefresh = false)
         }
     }
 
@@ -331,6 +341,7 @@ data class MainViewState(
     val items: List<FileUIModel> = emptyList(),
     val galleryBitmap: Bitmap? = null,
     val addFileDialog: AddFileDialog = AddFileDialog(),
+    val isRefresh: Boolean = false,
     val inProgress: Boolean = false,
     val isBackHandlerEnabled: Boolean = false,
 ) {

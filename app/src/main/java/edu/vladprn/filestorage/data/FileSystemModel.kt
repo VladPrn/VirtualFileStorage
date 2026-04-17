@@ -10,8 +10,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.RandomAccessFile
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
+
 import kotlin.math.min
 
 class FileSystemModel(
@@ -32,9 +31,7 @@ class FileSystemModel(
 
     suspend fun extractFile(fileModel: FileModel): File? = withContext(Dispatchers.IO) {
         try {
-            val folder = File(context.filesDir, SHARE)
-            val file = File(folder, TMP_FILE)
-            folder.mkdir()
+            val file = getTempFile()
             file.outputStream().use { outputStream ->
                 extractFileInternal(outputStream, fileModel)
             }
@@ -45,7 +42,7 @@ class FileSystemModel(
         }
     }
 
-    private fun writeFileInternal(
+    fun writeFileInternal(
         inputStream: InputStream,
         fileModel: FileModel,
     ) {
@@ -66,10 +63,15 @@ class FileSystemModel(
                     currentStorageIndex = storageIndex
                 }
 
-                raf?.seek(addressInStorage.toLong())
-                inputStream.read(byteArray)
+                var readSum = 0
+                var read: Int
+                do {
+                    read = inputStream.read(byteArray, readSum, Constants.SEGMENT_SIZE - readSum)
+                    readSum += read
+                } while (read > 0 && readSum < Constants.SEGMENT_SIZE)
 
                 val len = min(fileModel.size - byteIndex, Constants.SEGMENT_SIZE.toLong()).toInt()
+                raf?.seek(addressInStorage.toLong())
                 raf?.write(byteArray, 0, len)
                 byteIndex += len
             }
@@ -82,7 +84,7 @@ class FileSystemModel(
         }
     }
 
-    private fun extractFileInternal(
+    fun extractFileInternal(
         outputStream: OutputStream,
         fileModel: FileModel,
     ) {
@@ -119,6 +121,13 @@ class FileSystemModel(
         }
     }
 
+    fun getTempFile(): File {
+        val folder = File(context.filesDir, SHARE)
+        val file = File(folder, TMP_FILE)
+        folder.mkdir()
+        return file
+    }
+
     private fun getStorageFile(
         storageIndex: Int,
         isWriteMode: Boolean,
@@ -135,34 +144,6 @@ class FileSystemModel(
             if (isWriteMode) {
                 setLength(STORAGE_SIZE.toLong())
             }
-        }
-    }
-
-    suspend fun extractToZip(
-        fileModels: List<FileModel>,
-        outputStream: OutputStream,
-        onProgress: ((processedFiles: Int, totalFiles: Int) -> Unit)? = null
-    ): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val zipOutputStream = ZipOutputStream(outputStream)
-            val totalFiles = fileModels.size
-
-            fileModels.forEachIndexed { index, fileModel ->
-                val entryName = fileModel.name
-                zipOutputStream.putNextEntry(ZipEntry(entryName))
-
-                extractFileInternal(zipOutputStream, fileModel)
-
-                zipOutputStream.closeEntry()
-
-                onProgress?.invoke(index + 1, totalFiles)
-            }
-
-            zipOutputStream.finish()
-            zipOutputStream.close()
-            true
-        } catch (_: Throwable) {
-            false
         }
     }
 

@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import edu.vladprn.filestorage.R
+import edu.vladprn.filestorage.domain.MimeType
 import edu.vladprn.filestorage.ui.screen.settings.SettingsListener
 import edu.vladprn.filestorage.ui.screen.settings.SettingsViewModel
 import edu.vladprn.filestorage.ui.screen.settings.SettingsViewState
@@ -47,6 +48,7 @@ fun SettingsScreen(
     )
 
     UnloadFile(viewModel)
+    ImportFile(viewModel)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,26 +102,54 @@ private fun Content(
                     text = stringResource(R.string.save_backup_setting),
                     style = MaterialTheme.typography.bodyLarge
                 )
-            }
 
-            if (state.backupProgressDialog.isVisible) {
-                BackupProgressDialog(
+                Text(
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(horizontal = 32.dp)
-                        .width(500.dp),
-                    processedFiles = state.backupProgressDialog.backupProcessedFiles,
-                    totalFiles = state.backupProgressDialog.backupTotalFiles
+                        .fillMaxWidth()
+                        .clickable { listener.onImportBackupClick() }
+                        .padding(16.dp),
+                    text = stringResource(R.string.import_backup_setting),
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
+
+            Dialogs(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 32.dp)
+                    .width(500.dp),
+                dialog = state.dialog
+            )
         }
+    }
+}
+
+@Composable
+private fun Dialogs(
+    modifier: Modifier,
+    dialog: SettingsViewState.Dialog
+) {
+    when (dialog) {
+        is SettingsViewState.Dialog.BackupProgressDialog -> BackupProgressDialog(
+            modifier = modifier,
+            processedFiles = dialog.backupProcessedFiles,
+            totalFiles = dialog.backupTotalFiles
+        )
+
+        is SettingsViewState.Dialog.ImportProgressDialog -> ImportProgressDialog(
+            modifier = modifier,
+            processedFiles = dialog.importProcessedFiles,
+            totalFiles = dialog.importTotalFiles
+        )
+
+        SettingsViewState.Dialog.NONE -> Unit
     }
 }
 
 @Composable
 private fun UnloadFile(viewModel: SettingsViewModel) {
     val backupLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/zip"),
+        contract = ActivityResultContracts.CreateDocument(MimeType.ZIP),
         onResult = { uri: Uri? ->
             viewModel.saveBackup(uri)
         }
@@ -127,6 +157,20 @@ private fun UnloadFile(viewModel: SettingsViewModel) {
 
     viewModel.setOnFileUnload { input ->
         backupLauncher.launch(input)
+    }
+}
+
+@Composable
+private fun ImportFile(viewModel: SettingsViewModel) {
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            viewModel.importBackup(uri)
+        }
+    )
+
+    viewModel.setOnFileImport {
+        importLauncher.launch(MimeType.ZIP)
     }
 }
 

@@ -3,6 +3,7 @@ package edu.vladprn.filestorage.ui.screen.main
 import edu.vladprn.filestorage.ui.screen.main.compose.FileItemAction
 
 interface MainListener {
+    fun onRefresh()
     fun onSearchTextChanged(query: String)
     fun onAddFileClick()
     fun onAddFileConfirm(fileName: String)
@@ -15,6 +16,7 @@ interface MainListener {
 
     companion object {
         val empty = object : MainListener {
+            override fun onRefresh() = Unit
             override fun onSearchTextChanged(query: String) = Unit
             override fun onAddFileClick() = Unit
             override fun onAddFileConfirm(fileName: String) = Unit

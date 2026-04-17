@@ -25,6 +25,7 @@ class SettingsViewModel(
         private set
 
     private var onFileUnload: ((String) -> Unit) = {}
+    private var onFileImport: () -> Unit = {}
 
     init {
         state = state.copy(
@@ -43,8 +44,7 @@ class SettingsViewModel(
             uri = uri,
             onProgress = { processedFiles, totalFiles ->
                 state = state.copy(
-                    backupProgressDialog = SettingsViewState.BackupProgressDialog(
-                        isVisible = true,
+                    dialog = SettingsViewState.Dialog.BackupProgressDialog(
                         backupProcessedFiles = processedFiles,
                         backupTotalFiles = totalFiles
                     )
@@ -52,16 +52,31 @@ class SettingsViewModel(
             }
         )
 
-        state = state.copy(
-            backupProgressDialog = SettingsViewState.BackupProgressDialog(
-                isVisible = false
-            )
-        )
+        state = state.copy(dialog = SettingsViewState.Dialog.NONE)
 
         val messageResId = if (result) R.string.backup_success else R.string.backup_failed
-        snackbarHostState.showSnackbar(
-            message = resourceManager.getString(messageResId)
+        snackbarHostState.showSnackbar(message = resourceManager.getString(messageResId))
+    }
+
+    fun importBackup(uri: Uri?) = viewModelScope.launch {
+        uri ?: return@launch
+
+        val result = storageInteractor.importFromZip(
+            uri = uri,
+            onProgress = { processedFiles, totalFiles ->
+                state = state.copy(
+                    dialog = SettingsViewState.Dialog.ImportProgressDialog(
+                        importProcessedFiles = processedFiles,
+                        importTotalFiles = totalFiles
+                    )
+                )
+            }
         )
+
+        state = state.copy(dialog = SettingsViewState.Dialog.NONE)
+
+        val messageResId = if (result) R.string.import_success else R.string.import_failed
+        snackbarHostState.showSnackbar(message = resourceManager.getString(messageResId))
     }
 
     override fun toggleImageCompression() {
@@ -74,6 +89,14 @@ class SettingsViewModel(
         onFileUnload(FILE_NAME)
     }
 
+    override fun onImportBackupClick() {
+        onFileImport()
+    }
+
+    fun setOnFileImport(onFileImport: () -> Unit) {
+        this.onFileImport = onFileImport
+    }
+
     companion object {
         private const val FILE_NAME = "backup.zip"
     }
@@ -81,11 +104,20 @@ class SettingsViewModel(
 
 data class SettingsViewState(
     val isCompressImages: Boolean = false,
-    val backupProgressDialog: BackupProgressDialog = BackupProgressDialog(),
+    val dialog: Dialog = Dialog.NONE,
 ) {
-    data class BackupProgressDialog(
-        val isVisible: Boolean = false,
-        val backupProcessedFiles: Int = 0,
-        val backupTotalFiles: Int = 0,
-    )
+
+    sealed class Dialog {
+        data class BackupProgressDialog(
+            val backupProcessedFiles: Int = 0,
+            val backupTotalFiles: Int = 0,
+        ) : Dialog()
+
+        data class ImportProgressDialog(
+            val importProcessedFiles: Int = 0,
+            val importTotalFiles: Int = 0,
+        ) : Dialog()
+
+        data object NONE : Dialog()
+    }
 }

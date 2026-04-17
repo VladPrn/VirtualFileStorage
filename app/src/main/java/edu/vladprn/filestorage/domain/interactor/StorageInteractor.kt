@@ -2,14 +2,21 @@ package edu.vladprn.filestorage.domain.interactor
 
 import android.content.Context
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import edu.vladprn.filestorage.data.FileSystemModel
 import edu.vladprn.filestorage.data.mapper.ImageCompressor
 import edu.vladprn.filestorage.data.repository.FileRepository
 import edu.vladprn.filestorage.domain.model.FileModel
 import edu.vladprn.filestorage.utils.FileUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 
 class StorageInteractor(
     private val context: Context,
@@ -66,12 +73,91 @@ class StorageInteractor(
     suspend fun extractToZip(
         uri: Uri,
         onProgress: ((processedFiles: Int, totalFiles: Int) -> Unit)? = null,
-    ): Boolean {
-        return fileSystemModel.extractToZip(
-            fileModels = fileRepository.getAllFilesWithAddresses(),
-            outputStream = getOutputStream(uri) ?: return false,
-            onProgress = onProgress
-        )
+    ): Boolean = withContext(Dispatchers.IO) {
+        val fileModels = fileRepository.getAllFilesWithAddresses()
+        val outputStream = getOutputStream(uri) ?: return@withContext false
+
+        try {
+            val zipOutputStream = ZipOutputStream(outputStream)
+            val totalFiles = fileModels.size
+
+            fileModels.forEachIndexed { index, fileModel ->
+                val entryName = fileModel.name
+                zipOutputStream.putNextEntry(ZipEntry(entryName))
+
+                fileSystemModel.extractFileInternal(zipOutputStream, fileModel)
+
+                zipOutputStream.closeEntry()
+
+                onProgress?.invoke(index + 1, totalFiles)
+            }
+
+            zipOutputStream.flush()
+            zipOutputStream.close()
+            true
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    suspend fun importFromZip(
+        uri: Uri,
+        onProgress: ((processedFiles: Int, totalFiles: Int) -> Unit)? = null
+    ): Boolean = withContext(Dispatchers.IO) {
+        val inputStream = getInputStream(uri) ?: return@withContext false
+        val file = fileSystemModel.getTempFile()
+        file.outputStream().use { outputStream ->
+            inputStream.copyTo(outputStream)
+        }
+        val zipFile = ZipFile(file)
+
+        var processedFiles = 0
+        val totalFiles = zipFile.size()
+        val entries = zipFile.entries()
+        while (entries.hasMoreElements()) {
+            val entry = entries.nextElement()
+
+            val ext = entry.name.substringAfterLast(
+                delimiter = '.',
+                missingDelimiterValue = ""
+            )
+            val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
+
+            var fileModel = FileModel(
+                name = entry.name,
+                mimeType = mimeType.orEmpty(),
+                size = entry.size
+            )
+
+            if (isFirstSaving) {
+                val addresses = fileRepository.getAllAddresses()
+                storageAllocator.fillAllocatedAddresses(addresses)
+                isFirstSaving = false
+            }
+
+            val addresses = storageAllocator.allocateAddresses(fileModel)
+            fileModel = fileModel.copy(addresses = addresses)
+
+            val inputStream = zipFile.getInputStream(entry)
+            try {
+                inputStream.use {
+                    fileSystemModel.writeFileInternal(inputStream, fileModel)
+                }
+                storageAllocator.fillAllocatedAddresses(addresses)
+                fileRepository.insertFile(fileModel)
+            } catch (_: Throwable) {
+                // Nothing
+            }
+
+            onProgress?.invoke(++processedFiles, totalFiles)
+        }
+
+        try {
+            zipFile.close()
+            true
+        } catch (_: IOException) {
+            return@withContext false
+        }
     }
 
     private fun getInputStream(uri: Uri): InputStream? = try {
